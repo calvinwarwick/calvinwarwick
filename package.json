@@ -1,0 +1,26 @@
+{
+  "name": "poker-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline NLHE cash-game research laboratory for studying decision-making in NL25 6-max simulations.",
+  "workspaces": [
+    "packages/core",
+    "apps/server",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c cyan,magenta \"npm run dev -w @poker-lab/server\" \"npm run dev -w @poker-lab/web\"",
+    "build": "npm run build -w @poker-lab/core && npm run build -w @poker-lab/server && npm run build -w @poker-lab/web",
+    "test": "npm run test -w @poker-lab/core",
+    "test:watch": "npm run test:watch -w @poker-lab/core",
+    "sim": "npm run sim -w @poker-lab/server",
+    "lint": "npm run lint -w @poker-lab/web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
