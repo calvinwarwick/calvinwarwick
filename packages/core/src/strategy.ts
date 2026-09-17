@@ -68,6 +68,13 @@ export function preflopBaseline(combo: Combo, situation: Situation): { raise: nu
     const vsSteal = situation.opener === "CO" || situation.opener === "BTN" || situation.opener === "SB";
     const inPosition = situation.position === "BTN" || situation.position === "CO";
     const defendPos = situation.position === "BB" || situation.position === "SB" || inPosition;
+    if (combo.pair) {
+      const hi = Math.max(combo.a % 13, combo.b % 13);
+      if (hi >= 11) return normalize3(0.82, 0.12, 0.06);
+      if (hi >= 9) return normalize3(0.45, 0.4, 0.15);
+      if (inPosition || situation.position === "BB") return normalize3(0.08, 0.72, 0.2);
+      return normalize3(0.05, 0.25, 0.7);
+    }
     const valueT = vsSteal ? 14.6 : 15.0;
     const callT = defendPos ? (vsSteal ? 9.4 : 10.4) : 12.0;
     const threeBetValue = logistic(score - valueT, 2.4);

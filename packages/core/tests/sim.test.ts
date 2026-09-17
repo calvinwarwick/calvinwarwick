@@ -64,6 +64,17 @@ describe("decision engine", () => {
     expect(mix.call).toBeGreaterThan(0.05);
     expect(mix.fold).toBeGreaterThan(0);
     expect(mix.raise + mix.call + mix.fold).toBeCloseTo(1, 5);
+    const pairMix = mixedStrategyForType("22", {
+      street: "preflop",
+      potType: "single-raised",
+      position: "BTN",
+      opener: "CO",
+      facing: "open",
+      stackBb: 100,
+      headsUp: false,
+      multiway: true,
+    });
+    expect(pairMix.call).toBeGreaterThan(0.5);
   });
 
   it("classifies steal-facing and 3-bet pots", () => {

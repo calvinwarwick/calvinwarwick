@@ -128,7 +128,7 @@ export function LivePage() {
           </CardContent>
         </Card>
       </div>
-      <ExplanationPanel explanation={live.lastDecision?.decision?.explanation} />
+      <ExplanationPanel explanation={(live.lastHeroDecision ?? live.lastDecision)?.decision?.explanation} />
       <style>{`.field{height:2.25rem;border-radius:0.5rem;border:1px solid var(--color-border);background:transparent;padding:0 0.6rem;color:inherit;width:7rem}`}</style>
     </div>
   );

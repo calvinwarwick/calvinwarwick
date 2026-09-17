@@ -28,6 +28,7 @@ export interface LiveSnapshot {
   targetHands: number;
   lastHand: HandEvent | null;
   lastDecision: DecisionEvent | null;
+  lastHeroDecision: DecisionEvent | null;
   table: unknown;
 }
 
@@ -42,6 +43,7 @@ export const live: LiveSnapshot & { stopFlag: boolean } = {
   targetHands: 0,
   lastHand: null,
   lastDecision: null,
+  lastHeroDecision: null,
   table: null,
   stopFlag: false,
 };
@@ -148,6 +150,7 @@ export async function startLive(config: Partial<SimulationConfig> & { name?: str
   live.handsPlayed = 0;
   live.targetHands = full.hands;
   live.lastDecision = null;
+  live.lastHeroDecision = null;
   live.lastHand = null;
   emit({ type: "status", live: snapshot() });
 
@@ -162,6 +165,7 @@ export async function startLive(config: Partial<SimulationConfig> & { name?: str
         shouldStop: () => live.stopFlag,
         onDecision: (event) => {
           live.lastDecision = event;
+          if (event.isHero) live.lastHeroDecision = event;
           live.table = event.state;
           if (event.isHero) {
             actionBuffer.push({
