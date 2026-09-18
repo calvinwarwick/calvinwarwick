@@ -1,3 +1,13 @@
+export type EventItem = {
+  id: string;
+  time: number;
+  type: string;
+  confidence: number;
+  end: number | null;
+  source: string;
+  meta: Record<string, unknown>;
+};
+
 export type Clip = {
   id: string;
   start: number;
@@ -7,6 +17,7 @@ export type Clip = {
   enabled: boolean;
   caption: string | null;
   kill_count: number;
+  event_ids: string[];
   effects: Array<Record<string, unknown>>;
 };
 
@@ -23,6 +34,9 @@ export type Job = {
   height: number | null;
   fps: number | null;
   clips: Clip[];
+  events: EventItem[];
+  event_summary: Record<string, number>;
+  event_count: number;
   outputs: Record<string, string[]>;
   notes: string[];
   created_at: string | null;
@@ -73,6 +87,7 @@ export const api = {
     request<Settings>("/api/settings", { method: "PUT", body: JSON.stringify(body) }),
   jobs: () => request<Job[]>("/api/jobs"),
   job: (id: string) => request<Job>(`/api/jobs/${id}`),
+  events: (id: string) => request<{ events: EventItem[] }>(`/api/jobs/${id}/events`),
   upload: async (file: File) => {
     const data = new FormData();
     data.append("file", file);

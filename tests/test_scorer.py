@@ -13,6 +13,27 @@ def ev(time: float, type_: str, **meta) -> Event:
     )
 
 
+def test_edit_clip_keeps_every_in_window_event():
+    events = [
+        ev(3.0, "kill"),
+        ev(3.1, "hit_marker"),
+        ev(3.2, "explosion"),
+        ev(3.4, "score"),
+        ev(20.0, "audio_peak"),
+    ]
+    doc = EventsDocument(
+        source=SourceInfo(path="x.mp4", duration=24.0, width=1280, height=720, fps=30),
+        events=events,
+    )
+    edit = build_edit(doc)
+    assert edit.clips
+    clip = edit.clips[0]
+    window = [event for event in events if clip.start <= event.time <= clip.end]
+    assert {event.id for event in window} == set(clip.event_ids)
+    assert "hit_marker_3100" in clip.event_ids
+    assert "audio_peak_20000" not in clip.event_ids
+
+
 def test_double_kill_clusters_and_scores_higher_than_single():
     events = [ev(18.42, "kill"), ev(21.16, "kill"), ev(22.83, "explosion")]
     groups = cluster_kills(events, gap=6.0)

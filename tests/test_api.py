@@ -47,3 +47,15 @@ def test_health_and_sample_pipeline(tmp_path: Path, monkeypatch):
     assert body["status"] in {"ready", "analysed"}
     assert body["clips"]
     assert any(clip["kill_count"] >= 1 for clip in body["clips"])
+    events = body["events"]
+    assert events
+    assert body["event_count"] == len(events)
+    assert body["event_summary"].get("kill", 0) >= 1
+    clip = body["clips"][0]
+    window = [event for event in events if clip["start"] <= event["time"] <= clip["end"]]
+    assert clip["event_ids"]
+    assert set(clip["event_ids"]) == {event["id"] for event in window}
+    assert len(window) >= clip["kill_count"]
+    listed = client.get(f"/api/jobs/{job_id}/events")
+    assert listed.status_code == 200
+    assert len(listed.json()["events"]) == len(events)
