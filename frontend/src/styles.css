@@ -120,9 +120,10 @@ select {
 
 .layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 16px;
   margin-top: 16px;
+  align-items: start;
 }
 
 .panel {
@@ -223,6 +224,19 @@ select {
   margin-top: 3px;
 }
 
+.job-meta.done {
+  color: var(--go);
+}
+
+.job-meta.ready {
+  color: var(--amber);
+}
+
+.job-meta.analysing,
+.job-meta.rendering {
+  color: #7ad4ff;
+}
+
 .workspace {
   padding: 16px 18px 22px;
 }
@@ -275,24 +289,41 @@ select {
   color: var(--kill);
 }
 
-.preview {
+.workspace-grid {
   margin-top: 12px;
   display: grid;
-  grid-template-columns: 1.45fr 0.55fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  grid-template-rows: auto minmax(280px, 46vh);
+  gap: 12px;
+}
+
+.preview-stack {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.5fr 0.5fr;
   gap: 12px;
 }
 
 .player video,
 .preview-side img {
   width: 100%;
+  max-height: 38vh;
+  object-fit: contain;
   background: black;
   border: 1px solid var(--line);
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 52px;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
 }
 
 .timeline {
   position: relative;
   height: 28px;
-  margin-top: 8px;
   background: #0b0d0c;
   border: 1px solid var(--line);
   cursor: pointer;
@@ -317,10 +348,17 @@ select {
 
 .tick {
   position: absolute;
-  top: 2px;
+  top: 8px;
   width: 2px;
+  height: 12px;
+  opacity: 0.7;
+}
+
+.tick.action {
+  top: 2px;
   height: 24px;
-  opacity: 0.9;
+  width: 3px;
+  opacity: 1;
 }
 
 .playhead {
@@ -362,17 +400,10 @@ select {
   color: var(--amber);
 }
 
-.review {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 16px;
-}
-
 .review-col {
   border: 1px solid var(--line);
   background: var(--bg-2);
-  min-height: 280px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -383,8 +414,23 @@ select {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 420px;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.moments::-webkit-scrollbar,
+.event-list::-webkit-scrollbar,
+.job-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.moments::-webkit-scrollbar-thumb,
+.event-list::-webkit-scrollbar-thumb,
+.job-list::-webkit-scrollbar-thumb {
+  background: #3d4a3e;
+  border: 2px solid var(--bg-2);
 }
 
 .moment {
@@ -490,12 +536,13 @@ select {
 .badge {
   display: inline-flex;
   justify-content: center;
-  color: #111;
+  color: #0b0d0c;
   font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 3px 6px;
-  font-weight: 600;
+  font-weight: 700;
+  text-shadow: none;
 }
 
 .detail {
@@ -613,12 +660,17 @@ select {
 @media (max-width: 1100px) {
   .topbar,
   .layout,
-  .preview,
-  .review,
+  .workspace-grid,
+  .preview-stack,
   .toggles,
   .moment-main,
-  .event-row {
+  .event-row,
+  .timeline-row {
     grid-template-columns: 1fr;
+  }
+
+  .workspace-grid {
+    grid-template-rows: auto;
   }
 
   .lede {

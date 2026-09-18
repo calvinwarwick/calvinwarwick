@@ -208,11 +208,13 @@ export function App() {
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = Math.max(0, seconds);
+    setPlayhead(Math.max(0, seconds));
     void video.play();
   }
 
   function selectClip(clip: Clip) {
     setSelectedClipId(clip.id);
+    setMomentOnly(true);
     seekTo(clip.start);
   }
 
@@ -293,12 +295,12 @@ export function App() {
                 onClick={() => setSelectedId(job.id)}
               >
                 <strong>{job.filename}</strong>
-                <span className="job-meta">
+                <span className={`job-meta ${job.status}`}>
                   {statusLabel(job)}
                   {job.duration ? ` · ${formatClock(job.duration)}` : ""}
                 </span>
                 <span className="job-counts">
-                  {job.event_count || 0} events · {job.clips.length} moments
+                  {job.event_count || job.events?.length || 0} events · {job.clips.length} moments
                 </span>
               </li>
             ))}
@@ -328,74 +330,78 @@ export function App() {
                 </p>
               )}
               {selected.error && <p className="error">{selected.error}</p>}
-              {selected.notes.map((note) => (
-                <p key={note} className="notes">
-                  {note}
-                </p>
-              ))}
+              {selected.notes
+                .filter((note) => !note.toLowerCase().includes("whisper"))
+                .map((note) => (
+                  <p key={note} className="notes">
+                    {note}
+                  </p>
+                ))}
 
-              <div className="preview">
-                <div className="player">
-                  <video
-                    ref={videoRef}
-                    controls
-                    src={selected.id ? `/api/jobs/${selected.id}/source` : undefined}
-                    onTimeUpdate={(event) => setPlayhead(event.currentTarget.currentTime)}
-                  />
-                  <Timeline
-                    duration={selected.duration || 0}
-                    events={events}
-                    clips={clips}
-                    playhead={playhead}
-                    activeClipId={selectedClipId}
-                    onSeek={seekTo}
-                  />
-                </div>
-                <aside className="preview-side">
-                  <label className="toggle compact">
-                    <input
-                      type="checkbox"
-                      checked={showHud}
-                      onChange={(event) => setShowHud(event.target.checked)}
+              <div className="workspace-grid">
+                <div className="preview-stack">
+                  <div className="player">
+                    <video
+                      ref={videoRef}
+                      controls
+                      src={selected.id ? `/api/jobs/${selected.id}/source` : undefined}
+                      onTimeUpdate={(event) => setPlayhead(event.currentTarget.currentTime)}
                     />
-                    HUD calibration
-                  </label>
-                  {showHud && (
-                    <img
-                      alt="HUD calibration overlay with detection boxes"
-                      src={`/api/jobs/${selected.id}/calibration`}
-                      onError={(event) => {
-                        event.currentTarget.style.display = "none";
-                      }}
-                    />
-                  )}
-                  {Object.keys(selected.event_summary || {}).length > 0 && (
-                    <div className="summary-grid">
-                      {Object.entries(selected.event_summary)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([type, count]) => (
-                          <button
-                            key={type}
-                            type="button"
-                            className={`chip ${eventFilter === type ? "on" : ""}`}
-                            onClick={() => setEventFilter((current) => (current === type ? "all" : type))}
-                          >
-                            <i style={{ background: eventStyle(type).color }} />
-                            {eventStyle(type).label} {count}
-                          </button>
-                        ))}
+                    <div className="timeline-row">
+                      <span className="time">{formatClock(playhead, true)}</span>
+                      <Timeline
+                        duration={selected.duration || 0}
+                        events={events}
+                        clips={clips}
+                        playhead={playhead}
+                        activeClipId={selectedClipId}
+                        onSeek={seekTo}
+                      />
+                      <span className="time">{formatClock(selected.duration || 0)}</span>
                     </div>
-                  )}
-                </aside>
-              </div>
+                  </div>
+                  <aside className="preview-side">
+                    <label className="toggle compact">
+                      <input
+                        type="checkbox"
+                        checked={showHud}
+                        onChange={(event) => setShowHud(event.target.checked)}
+                      />
+                      HUD overlay
+                    </label>
+                    {showHud && (
+                      <img
+                        alt="HUD calibration overlay with detection boxes"
+                        src={`/api/jobs/${selected.id}/calibration`}
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
+                    {Object.keys(selected.event_summary || {}).length > 0 && (
+                      <div className="summary-grid">
+                        {Object.entries(selected.event_summary)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([type, count]) => (
+                            <button
+                              key={type}
+                              type="button"
+                              className={`chip ${eventFilter === type ? "on" : ""}`}
+                              onClick={() => setEventFilter((current) => (current === type ? "all" : type))}
+                            >
+                              <i style={{ background: eventStyle(type).color }} />
+                              {eventStyle(type).label} {count}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </aside>
+                </div>
 
-              <div className="review">
                 <section className="review-col">
                   <div className="panel-head tight">
-                    <span>Moments · {kept} kept</span>
-                    {clips.length > 0 && (
-                      <span className="hint">Click a row to preview its events</span>
-                    )}
+                    <span>Moments · {kept} kept / {clips.length}</span>
+                    <span className="hint">Open a moment to see every event inside it</span>
                   </div>
                   <div className="moments">
                     {clips
@@ -454,16 +460,19 @@ export function App() {
                 <section className="review-col events-col">
                   <div className="panel-head tight">
                     <span>
-                      All events · {visibleEvents.length}
+                      {momentOnly && selectedClip ? "Events in this moment" : "All events"} · {visibleEvents.length}
                       {visibleEvents.length !== events.length ? ` / ${events.length}` : ""}
                     </span>
                     <div className="event-tools">
                       <button
                         type="button"
-                        className={`btn ghost mini ${eventFilter === "all" ? "on" : ""}`}
-                        onClick={() => setEventFilter("all")}
+                        className={`btn ghost mini ${!momentOnly && eventFilter === "all" ? "on" : ""}`}
+                        onClick={() => {
+                          setEventFilter("all");
+                          setMomentOnly(false);
+                        }}
                       >
-                        All types
+                        Whole clip
                       </button>
                       <button
                         type="button"
@@ -471,7 +480,7 @@ export function App() {
                         disabled={!selectedClip}
                         onClick={() => setMomentOnly((value) => !value)}
                       >
-                        This moment
+                        Only this moment
                       </button>
                     </div>
                   </div>
@@ -483,12 +492,15 @@ export function App() {
                           : "No events yet for this clip."}
                       </p>
                     )}
+                    {events.length > 0 && visibleEvents.length === 0 && (
+                      <p className="notes">No events match this filter. Choose Whole clip or another type.</p>
+                    )}
                     {visibleEvents.map((event) => (
                       <EventRow
                         key={event.id}
                         event={event}
                         active={event.id === activeEventId}
-                        dim={Boolean(selectedClip && !eventsForClip([event], selectedClip).length)}
+                        dim={Boolean(selectedClip && !momentOnly && !eventsForClip([event], selectedClip).length)}
                         onSeek={seekTo}
                       />
                     ))}
@@ -623,17 +635,20 @@ function Timeline({
           }}
         />
       ))}
-      {events.map((event) => (
-        <b
-          key={event.id}
-          className="tick"
-          title={`${eventStyle(event.type).label} ${formatClock(event.time, true)}`}
-          style={{
-            left: `${(event.time / duration) * 100}%`,
-            background: eventStyle(event.type).color,
-          }}
-        />
-      ))}
+      {events.map((event) => {
+        const action = ["kill", "headshot", "explosion", "death", "multikill"].includes(event.type);
+        return (
+          <b
+            key={event.id}
+            className={`tick ${action ? "action" : ""}`}
+            title={`${eventStyle(event.type).label} ${formatClock(event.time, true)}`}
+            style={{
+              left: `${(event.time / duration) * 100}%`,
+              background: eventStyle(event.type).color,
+            }}
+          />
+        );
+      })}
       <em className="playhead" style={{ left: `${(playhead / duration) * 100}%` }} />
     </div>
   );
