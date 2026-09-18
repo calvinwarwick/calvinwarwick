@@ -30,24 +30,24 @@ thresholds:
   shorts_max_clips: 5
 
 reactions:
-  - oh my god
-  - oh my days
-  - omg
-  - no way
-  - holy
-  - let's go
-  - lets go
-  - what
-  - insane
-  - clipped
-  - get wrecked
-  - destroyed
-  - headshot
-  - come on
-  - yes
-  - bro
-  - send it
-  - huge
+  - "oh my god"
+  - "oh my days"
+  - "omg"
+  - "no way"
+  - "holy"
+  - "let's go"
+  - "lets go"
+  - "what"
+  - "insane"
+  - "clipped"
+  - "get wrecked"
+  - "destroyed"
+  - "headshot"
+  - "come on"
+  - "yes"
+  - "bro"
+  - "send it"
+  - "huge"
 
 effects:
   zoom_duration: 0.38

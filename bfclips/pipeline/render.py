@@ -341,7 +341,7 @@ def _style_cmd(
         audio_f = "aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo"
         if edit.timeline.audio_enhance:
             audio_f = "highpass=f=70,dynaudnorm=f=120:g=12," + audio_f
-        cmd += ["-filter:a", audio_f, "-c:a", "aac", "-b:a", "192k"]
+        cmd += ["-map", "0:a", "-filter:a", audio_f, "-c:a", "aac", "-b:a", "192k"]
     else:
         cmd += ["-an"]
     cmd.append(str(dest))

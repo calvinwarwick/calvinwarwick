@@ -105,8 +105,8 @@ def _battlefield_frame(width: int, height: int, t: float) -> np.ndarray:
 def _paint_kill(frame: np.ndarray, strength: float, headshot: bool) -> None:
     h, w = frame.shape[:2]
     alpha = np.clip(strength, 0, 1)
-    # Left kill feed row (BF6-style)
-    x0, y0, x1, y1 = 18, int(h * 0.16), int(w * 0.28), int(h * 0.16) + 28
+    # Left kill feed block (BF6-style) — large enough to move the crop's p90.
+    x0, y0, x1, y1 = 12, int(h * 0.12), int(w * 0.29), int(h * 0.12) + 86
     color = (40, 40, 230) if not headshot else (20, 80, 255)
     cv2.rectangle(frame, (x0, y0), (x1, y1), color, -1)
     cv2.putText(
@@ -122,11 +122,12 @@ def _paint_kill(frame: np.ndarray, strength: float, headshot: bool) -> None:
     # Hit marker
     marker = (20, 20, 255) if headshot else (230, 230, 230)
     cx, cy = w // 2, h // 2
-    span = int(16 + 10 * alpha)
-    cv2.line(frame, (cx - span, cy - span), (cx - 4, cy - 4), marker, 2)
-    cv2.line(frame, (cx + span, cy - span), (cx + 4, cy - 4), marker, 2)
-    cv2.line(frame, (cx - span, cy + span), (cx - 4, cy + 4), marker, 2)
-    cv2.line(frame, (cx + span, cy + span), (cx + 4, cy + 4), marker, 2)
+    span = int(22 + 14 * alpha)
+    thickness = 4 if headshot else 3
+    cv2.line(frame, (cx - span, cy - span), (cx - 4, cy - 4), marker, thickness)
+    cv2.line(frame, (cx + span, cy - span), (cx + 4, cy - 4), marker, thickness)
+    cv2.line(frame, (cx - span, cy + span), (cx - 4, cy + 4), marker, thickness)
+    cv2.line(frame, (cx + span, cy + span), (cx + 4, cy + 4), marker, thickness)
     # Score pop
     cv2.putText(
         frame,

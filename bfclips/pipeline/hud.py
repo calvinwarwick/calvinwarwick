@@ -62,9 +62,15 @@ def region_features(crop: np.ndarray) -> tuple[float, float, float]:
     else:
         bgr = crop
         gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    brightness = float(np.mean(gray))
+    # Kill-feed rows and hit markers occupy a small slice of a large crop.
+    # p90 / max react to a new line; mean often does not.
+    brightness = float(np.percentile(gray, 90))
     b, g, r = cv2.split(bgr)
-    red_ratio = float((np.mean(r) + 1.0) / (np.mean(b) + np.mean(g) + 1.0))
+    mask = gray >= max(40.0, np.percentile(gray, 75))
+    if np.any(mask):
+        red_ratio = float((np.mean(r[mask]) + 1.0) / (np.mean(b[mask]) + np.mean(g[mask]) + 1.0))
+    else:
+        red_ratio = float((np.mean(r) + 1.0) / (np.mean(b) + np.mean(g) + 1.0))
     edges = cv2.Canny(gray, 60, 140)
     edge_energy = float(np.mean(edges))
     return brightness, red_ratio, edge_energy
@@ -126,17 +132,23 @@ def peak_indices(values: list[float], z_thresh: float, min_gap: int) -> list[int
     if len(values) < 5:
         return []
     arr = np.asarray(values, dtype=np.float64)
+    delta = np.abs(np.diff(arr, prepend=arr[0]))
     median = np.median(arr)
     mad = np.median(np.abs(arr - median)) + 1e-6
     z = (arr - median) / (1.4826 * mad)
+    d_med = np.median(delta)
+    d_mad = np.median(np.abs(delta - d_med)) + 1e-6
+    z_delta = (delta - d_med) / (1.4826 * d_mad)
+    score = np.maximum(z, 0.65 * z_delta)
     peaks: list[int] = []
     last = -min_gap
-    for i, score in enumerate(z):
-        if score >= z_thresh and i - last >= min_gap:
-            # local maximum in a tiny window
+    for i, value in enumerate(score):
+        # Ignore recoveries from a dark overlay (death/menu): those have a
+        # large delta but sit back at the baseline, not a true HUD pop.
+        if value >= z_thresh and z[i] >= 1.15 and arr[i] > median and i - last >= min_gap:
             left = max(0, i - 1)
             right = min(len(arr), i + 2)
-            if arr[i] >= np.max(arr[left:right]) * 0.98:
+            if arr[i] >= np.max(arr[left:right]) * 0.96:
                 peaks.append(i)
                 last = i
     return peaks
@@ -161,14 +173,14 @@ def detect_hud_events(
     min_gap = max(1, int(round((cfg.get("min_event_gap", 0.35) * sample_fps))))
     events: list[Event] = []
 
-    feed_peaks: list[tuple[float, float, str]] = []
+    feed_peaks: list[tuple[float, float, str, float]] = []
     for name, signal in signals.items():
         if "kill_feed" not in name:
             continue
         for idx in peak_indices(signal.brightness, cfg.get("peak_z", 2.4), min_gap):
             t = signal.times[idx]
             conf = min(0.99, 0.72 + (signal.brightness[idx] / 255.0) * 0.2)
-            feed_peaks.append((t, conf, name))
+            feed_peaks.append((t, conf, name, signal.red_ratio[idx]))
 
     hit_signal = signals.get("hit_marker")
     hit_peaks: list[tuple[float, bool, float]] = []
@@ -181,14 +193,14 @@ def detect_hud_events(
             hit_peaks.append((hit_signal.times[idx], headshot, min(0.98, 0.7 + red * 0.08)))
 
     used_hits: set[int] = set()
-    for t, conf, source in feed_peaks:
-        headshot = False
+    for t, conf, source, feed_red in feed_peaks:
+        headshot = feed_red >= cfg.get("headshot_red_ratio", 1.25)
         match_conf = conf
         for i, (ht, hs, hconf) in enumerate(hit_peaks):
             if i in used_hits:
                 continue
             if abs(ht - t) <= 0.7:
-                headshot = hs
+                headshot = headshot or hs
                 match_conf = max(conf, hconf)
                 used_hits.add(i)
                 break

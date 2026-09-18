@@ -63,8 +63,9 @@ def _ingest(path: Path) -> None:
     SessionLocal = session_factory()
     session = SessionLocal()
     try:
-        job = create_job_from_path(session, path, copy_into_work=False)
-        spawn(session_factory(), job.id, run_pipeline)
+        job = create_job_from_path(session, path, copy_into_work=False, reuse_recent=True)
+        if job.status in {"queued"}:
+            spawn(session_factory(), job.id, run_pipeline)
     finally:
         session.close()
 

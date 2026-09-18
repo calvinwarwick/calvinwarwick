@@ -47,7 +47,7 @@ export function App() {
 
   useEffect(() => {
     if (!selected) return;
-    const active = ["queued", "analysing", "rendering"].includes(selected.status);
+    const active = ["queued", "analysing", "analysed", "rendering"].includes(selected.status);
     if (!active) return;
     const timer = window.setInterval(() => {
       api.job(selected.id).then((job) => {
@@ -55,7 +55,7 @@ export function App() {
       });
     }, 1200);
     return () => window.clearInterval(timer);
-  }, [selected]);
+  }, [selected?.id, selected?.status]);
 
   async function onFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -200,6 +200,7 @@ export function App() {
               <div className="bar">
                 <i style={{ width: `${Math.round((selected.progress || 0) * 100)}%` }} />
               </div>
+              {error && <p className="error">{error}</p>}
               {selected.error && <p className="error">{selected.error}</p>}
               {selected.notes.map((note) => (
                 <p key={note} className="notes">

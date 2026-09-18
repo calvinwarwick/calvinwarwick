@@ -31,7 +31,7 @@ def test_sample_clip_detects_kills_and_renders(tmp_path: Path):
     assert job.events_json
     events = EventsDocument.model_validate_json(job.events_json)
     kill_times = [e.time for e in events.events if e.type == "kill"]
-    assert len(kill_times) >= 2
+    assert 2 <= len(kill_times) <= 3
     for expected in DEFAULT_KILLS:
         assert any(abs(found - expected) < 0.55 for found in kill_times)
 

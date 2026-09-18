@@ -47,13 +47,38 @@ def job_output_dir(job: Job, settings: Settings | None = None) -> Path:
     return path
 
 
-def create_job_from_path(session: Session, source: Path, copy_into_work: bool = False) -> Job:
+def existing_job_for_path(session: Session, source: Path, recent_s: float = 90.0) -> Job | None:
+    path = str(source.expanduser().resolve())
+    job = (
+        session.query(Job)
+        .filter(Job.source_path == path)
+        .order_by(Job.created_at.desc())
+        .first()
+    )
+    if not job or not job.created_at:
+        return None
+    age = (datetime.utcnow() - job.created_at).total_seconds()
+    if age <= recent_s:
+        return job
+    return None
+
+
+def create_job_from_path(
+    session: Session,
+    source: Path,
+    copy_into_work: bool = False,
+    reuse_recent: bool = False,
+) -> Job:
     settings = get_settings()
     source = source.expanduser().resolve()
     if not source.exists():
         raise JobError(f"File not found: {source}")
     if source.suffix.lower() not in VIDEO_SUFFIXES:
         raise JobError(f"Unsupported video type: {source.suffix}")
+    if reuse_recent:
+        found = existing_job_for_path(session, source)
+        if found:
+            return found
     job_id = uuid.uuid4().hex[:12]
     dest = source
     if copy_into_work:

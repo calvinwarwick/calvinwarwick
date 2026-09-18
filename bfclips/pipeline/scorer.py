@@ -98,7 +98,7 @@ def _reaction_in_window(
     transcript: list[TranscriptWord], start: float, end: float, phrases: list[str]
 ) -> bool:
     text = " ".join(w.text for w in transcript if start <= w.start <= end).lower()
-    return any(p.lower() in text for p in phrases)
+    return any(str(p).lower() in text for p in phrases)
 
 
 def _join_reason(parts: list[str]) -> str:

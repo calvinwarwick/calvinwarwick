@@ -131,15 +131,16 @@ async def upload_job(
     dest = settings.incoming_dir / (file.filename or "upload.mp4")
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(await file.read())
-    job = create_job_from_path(session, dest, copy_into_work=False)
-    spawn(session_factory(), job.id, run_pipeline)
+    job = create_job_from_path(session, dest, copy_into_work=False, reuse_recent=True)
+    if job.status == "queued":
+        spawn(session_factory(), job.id, run_pipeline)
     return serialize_job(job)
 
 
 @app.post("/api/jobs/sample")
 def create_sample(session: Session = Depends(get_session)) -> dict:
     settings = get_settings()
-    dest = settings.incoming_dir / "sample_battlefield.mp4"
+    dest = settings.work_dir / "sample_battlefield.mp4"
     generate_sample(dest)
     job = create_job_from_path(session, dest, copy_into_work=False)
     spawn(session_factory(), job.id, run_pipeline)
@@ -215,6 +216,9 @@ def render(job_id: str, payload: RenderRequest, session: Session = Depends(get_s
             audio_enhance=payload.audio_enhance,
         )
         job.edit_json = edit.model_dump_json()
+        job.status = "rendering"
+        job.stage = "render"
+        job.progress = 0.02
         session.commit()
 
     def _run(db: Session, jid: str) -> None:
