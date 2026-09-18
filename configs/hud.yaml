@@ -1,0 +1,35 @@
+# Normalized [0, 1] HUD crops. Battlefield 6 defaults to a left-side kill feed
+# and a center hit marker; older titles often put the feed top-right.
+# Tune these after dropping a clip and opening the calibration overlay.
+
+presets:
+  bf6:
+    kill_feed:
+      - { name: kill_feed_left, x: 0.00, y: 0.10, w: 0.30, h: 0.38 }
+      - { name: kill_feed_right, x: 0.70, y: 0.10, w: 0.30, h: 0.38 }
+    hit_marker: { x: 0.44, y: 0.40, w: 0.12, h: 0.20 }
+    score_popup: { x: 0.36, y: 0.52, w: 0.28, h: 0.16 }
+    death_banner: { x: 0.26, y: 0.28, w: 0.48, h: 0.24 }
+    health: { x: 0.02, y: 0.84, w: 0.22, h: 0.14 }
+    objective: { x: 0.34, y: 0.00, w: 0.32, h: 0.10 }
+
+  bf2042:
+    kill_feed:
+      - { name: kill_feed_right, x: 0.72, y: 0.12, w: 0.26, h: 0.34 }
+    hit_marker: { x: 0.45, y: 0.42, w: 0.10, h: 0.16 }
+    score_popup: { x: 0.40, y: 0.55, w: 0.20, h: 0.12 }
+    death_banner: { x: 0.28, y: 0.32, w: 0.44, h: 0.20 }
+    health: { x: 0.02, y: 0.86, w: 0.20, h: 0.12 }
+    objective: { x: 0.35, y: 0.02, w: 0.30, h: 0.10 }
+
+active_preset: bf6
+
+detection:
+  sample_fps: 4
+  refine_fps: 12
+  min_event_gap: 0.35
+  peak_z: 2.4
+  hit_marker_z: 2.1
+  explosion_global_z: 2.8
+  death_darken_z: 2.0
+  headshot_red_ratio: 1.25
