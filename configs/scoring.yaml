@@ -1,0 +1,57 @@
+# Excitement scoring used by the deterministic editor.
+# The model layer can rewrite reasons/captions, but scores stay rule-based
+# unless a learned ranker is trained from approve/reject feedback later.
+
+weights:
+  kill: 20
+  headshot: 10
+  second_kill_within_s: { window: 4.0, points: 25 }
+  third_kill_within_s: { window: 6.0, points: 40 }
+  vehicle_destroyed: 30
+  explosion: 12
+  large_audio_transient: 10
+  reaction_line: 20
+  death: -10
+  idle_10s: -30
+
+windows:
+  pre_roll: 5.0
+  post_roll: 3.0
+  cluster_gap: 6.0
+  nearby_pad: 2.0
+  min_clip: 4.0
+  max_clip: 22.0
+  merge_overlap: 1.25
+
+thresholds:
+  keep_score: 40
+  short_score: 70
+  youtube_max_clips: 12
+  shorts_max_clips: 5
+
+reactions:
+  - "oh my god"
+  - "oh my days"
+  - "omg"
+  - "no way"
+  - "holy"
+  - "let's go"
+  - "lets go"
+  - "what"
+  - "insane"
+  - "clipped"
+  - "get wrecked"
+  - "destroyed"
+  - "headshot"
+  - "come on"
+  - "yes"
+  - "bro"
+  - "send it"
+  - "huge"
+
+effects:
+  zoom_duration: 0.38
+  zoom_scale: 1.16
+  slowmo_rate: 0.42
+  slowmo_pad: 0.35
+  caption_hold: 2.2

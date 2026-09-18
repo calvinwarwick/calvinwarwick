@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bfclips"
+version = "0.1.0"
+description = "Local Battlefield kill-clip analysis and montage editor"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Calvin Warwick" }]
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "python-multipart>=0.0.12",
+  "sqlalchemy>=2.0",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "opencv-python-headless>=4.10",
+  "numpy>=1.26",
+  "watchdog>=5.0",
+  "pyyaml>=6.0",
+  "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+speech = ["faster-whisper>=1.1"]
+dev = ["pytest>=8.3", "ruff>=0.6"]
+
+[project.scripts]
+bfclips = "bfclips.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["bfclips*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
