@@ -55,6 +55,7 @@ export type Settings = {
   incoming_dir: string;
   output_dir: string;
   hud_preset: string;
+  player_name: string;
   ollama_model: string;
   ollama_enabled: boolean;
   whisper_model: string;

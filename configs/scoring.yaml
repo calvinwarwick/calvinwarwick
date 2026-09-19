@@ -5,6 +5,8 @@
 weights:
   kill: 20
   headshot: 10
+  longshot: 15
+  blindside: 12
   second_kill_within_s: { window: 4.0, points: 25 }
   third_kill_within_s: { window: 6.0, points: 40 }
   vehicle_destroyed: 30
@@ -15,13 +17,13 @@ weights:
   idle_10s: -30
 
 windows:
-  pre_roll: 5.0
-  post_roll: 3.0
-  cluster_gap: 6.0
+  pre_roll: 3.2
+  post_roll: 2.8
+  cluster_gap: 4.0
   nearby_pad: 2.0
   min_clip: 4.0
   max_clip: 22.0
-  merge_overlap: 1.25
+  merge_overlap: 0.6
 
 thresholds:
   keep_score: 40

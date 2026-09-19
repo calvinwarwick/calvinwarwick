@@ -59,6 +59,20 @@ def test_transcript_reaction_without_event():
     assert cluster.score >= 40
 
 
+def test_longshot_caption_and_bonus():
+    events = [ev(28.2, "kill", kind="longshot", longshot=True, headshot=True), ev(28.2, "longshot")]
+    cluster = score_cluster([events[0]], events, [])
+    assert cluster.score >= 20 + 10 + 15
+    assert "LONGSHOT" in cluster.caption
+
+
+def test_cluster_gap_splits_dead_time():
+    events = [ev(20.0, "kill"), ev(24.0, "kill"), ev(36.5, "kill")]
+    groups = cluster_kills(events, gap=4.0)
+    assert len(groups) == 2
+    assert [k.time for k in groups[0]] == [20.0, 24.0]
+
+
 def test_editor_builds_zoom_and_slowmo():
     doc = EventsDocument(
         source=SourceInfo(path="x.mp4", duration=60, width=1920, height=1080, fps=60),

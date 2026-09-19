@@ -4,6 +4,8 @@ import { api, type Clip, type EventItem, type Health, type Job, type Settings } 
 const EVENT_STYLE: Record<string, { label: string; color: string }> = {
   kill: { label: "Kill", color: "#ff4d2e" },
   headshot: { label: "Headshot", color: "#ffb020" },
+  longshot: { label: "Longshot", color: "#fde047" },
+  blindside: { label: "Blindside", color: "#22d3ee" },
   multikill: { label: "Multikill", color: "#facc15" },
   vehicle_destroyed: { label: "Vehicle", color: "#fb7185" },
   explosion: { label: "Explosion", color: "#ff7a18" },
@@ -49,6 +51,8 @@ function eventsForClip(events: EventItem[], clip: Clip): EventItem[] {
 function eventDetail(event: EventItem): string {
   const bits: string[] = [];
   if (event.meta?.headshot) bits.push("headshot");
+  const kind = event.meta?.kind;
+  if (typeof kind === "string" && kind && kind !== "headshot") bits.push(kind);
   const energy = event.meta?.energy;
   if (typeof energy === "number") bits.push(`energy ${energy.toFixed(2)}`);
   const delta = event.meta?.delta;
@@ -636,7 +640,7 @@ function Timeline({
         />
       ))}
       {events.map((event) => {
-        const action = ["kill", "headshot", "explosion", "death", "multikill"].includes(event.type);
+        const action = ["kill", "headshot", "longshot", "blindside", "explosion", "death", "multikill"].includes(event.type);
         return (
           <b
             key={event.id}

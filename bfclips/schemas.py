@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 EventType = Literal[
     "kill",
     "headshot",
+    "longshot",
+    "blindside",
     "multikill",
     "vehicle_destroyed",
     "explosion",
@@ -136,6 +138,7 @@ class SettingsOut(BaseModel):
     incoming_dir: str
     output_dir: str
     hud_preset: str
+    player_name: str
     ollama_url: str
     ollama_model: str
     ollama_enabled: bool
@@ -151,6 +154,7 @@ class SettingsUpdate(BaseModel):
     incoming_dir: str | None = None
     output_dir: str | None = None
     hud_preset: str | None = None
+    player_name: str | None = None
     ollama_enabled: bool | None = None
     ollama_model: str | None = None
     whisper_enabled: bool | None = None

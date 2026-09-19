@@ -29,11 +29,12 @@ class Settings(BaseSettings):
     db_path: Path = ROOT / "data" / "bfclips.db"
     downloads_dir: Path = Path.home() / "Downloads"
 
-    host: str = "127.0.0.1"
+    host: str = "0.0.0.0"
     port: int = 8000
 
     hud_preset: str = "bf6"
-    sample_fps: float = 4.0
+    player_name: str = "buy-bitcoin-247"
+    sample_fps: float = 6.0
     refine_fps: float = 12.0
 
     ollama_url: str = "http://127.0.0.1:11434"

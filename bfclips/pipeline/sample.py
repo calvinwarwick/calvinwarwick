@@ -42,7 +42,7 @@ def generate_sample(
         for kill in kills:
             if 0 <= t - kill <= 0.42:
                 strength = 1.0 - (t - kill) / 0.42
-                _paint_kill(frame, strength, headshot=(kill == kills[0]))
+                _paint_kill(frame, strength, headshot=(kill == kills[0]), victim=f"ENEMY{int(kill)}")
         if explosion_at is not None and 0 <= t - explosion_at <= 0.28:
             flash = int(180 * (1.0 - (t - explosion_at) / 0.28))
             frame = cv2.add(frame, np.full_like(frame, flash))
@@ -102,54 +102,58 @@ def _battlefield_frame(width: int, height: int, t: float) -> np.ndarray:
     return base
 
 
-def _paint_kill(frame: np.ndarray, strength: float, headshot: bool) -> None:
+def _paint_kill(frame: np.ndarray, strength: float, headshot: bool, victim: str = "ENEMY") -> None:
     h, w = frame.shape[:2]
     alpha = np.clip(strength, 0, 1)
-    # Left kill feed block (BF6-style) — large enough to move the crop's p90.
-    x0, y0, x1, y1 = 12, int(h * 0.12), int(w * 0.29), int(h * 0.12) + 86
-    color = (40, 40, 230) if not headshot else (20, 80, 255)
-    cv2.rectangle(frame, (x0, y0), (x1, y1), color, -1)
+    # Own kill: desaturated (white) name on the left, team-coloured victim on the right.
+    x0, y0 = int(w * 0.70), int(h * 0.055)
+    x1, y1 = int(w * 0.98), y0 + 28
+    cv2.rectangle(frame, (x0, y0), (x1, y1), (18, 18, 18), -1)
+    mid = (x0 + x1) // 2
+    cv2.putText(frame, "YOU", (x0 + 10, y0 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (240, 240, 240), 1, cv2.LINE_AA)
+    cv2.putText(frame, victim, (mid + 8, y0 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (40, 90, 220), 1, cv2.LINE_AA)
+    # Center medal (LONGSHOT / HEADSHOT / DOUBLE KILL)
+    medal = "HEADSHOT" if headshot else "ENEMY DOWN"
+    color = (30, 40, 255) if headshot else (240, 240, 240)
     cv2.putText(
         frame,
-        "YOU  killed  ENEMY",
-        (x0 + 8, y0 + 20),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.45,
-        (240, 240, 240),
-        1,
-        cv2.LINE_AA,
-    )
-    # Hit marker
-    marker = (20, 20, 255) if headshot else (230, 230, 230)
-    cx, cy = w // 2, h // 2
-    span = int(22 + 14 * alpha)
-    thickness = 4 if headshot else 3
-    cv2.line(frame, (cx - span, cy - span), (cx - 4, cy - 4), marker, thickness)
-    cv2.line(frame, (cx + span, cy - span), (cx + 4, cy - 4), marker, thickness)
-    cv2.line(frame, (cx - span, cy + span), (cx - 4, cy + 4), marker, thickness)
-    cv2.line(frame, (cx + span, cy + span), (cx + 4, cy + 4), marker, thickness)
-    # Score pop
-    cv2.putText(
-        frame,
-        "+100" if not headshot else "HEADSHOT +150",
-        (int(w * 0.40), int(h * 0.60)),
+        medal,
+        (int(w * 0.24), int(h * 0.58)),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.7,
-        (0, 215, 255),
+        color,
         2,
         cv2.LINE_AA,
     )
+    if headshot:
+        cv2.circle(frame, (int(w * 0.30), int(h * 0.64)), 14, (20, 30, 230), -1)
+        cv2.circle(frame, (int(w * 0.34), int(h * 0.66)), 10, (40, 40, 220), -1)
+    # Tight center hit marker
+    marker = (20, 20, 255) if headshot else (230, 230, 230)
+    cx, cy = w // 2, h // 2
+    span = int(10 + 8 * alpha)
+    thickness = 3 if headshot else 2
+    cv2.line(frame, (cx - span, cy - span), (cx - 3, cy - 3), marker, thickness)
+    cv2.line(frame, (cx + span, cy - span), (cx + 3, cy - 3), marker, thickness)
+    cv2.line(frame, (cx - span, cy + span), (cx - 3, cy + 3), marker, thickness)
+    cv2.line(frame, (cx + span, cy + span), (cx + 3, cy + 3), marker, thickness)
 
 
 def _paint_death(frame: np.ndarray, strength: float) -> None:
     h, w = frame.shape[:2]
     dark = (frame.astype(np.float32) * (0.35 + 0.3 * (1 - strength))).astype(np.uint8)
     frame[:] = dark
-    cv2.rectangle(frame, (int(w * 0.28), int(h * 0.36)), (int(w * 0.72), int(h * 0.50)), (0, 0, 90), -1)
+    x0, y0 = int(w * 0.70), int(h * 0.055)
+    x1, y1 = int(w * 0.98), y0 + 28
+    cv2.rectangle(frame, (x0, y0), (x1, y1), (18, 18, 18), -1)
+    mid = (x0 + x1) // 2
+    cv2.putText(frame, "ENEMY", (x0 + 8, y0 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (40, 90, 220), 1, cv2.LINE_AA)
+    cv2.putText(frame, "YOU", (mid + 8, y0 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (240, 240, 240), 1, cv2.LINE_AA)
+    cv2.rectangle(frame, (int(w * 0.28), int(h * 0.58)), (int(w * 0.72), int(h * 0.72)), (0, 0, 90), -1)
     cv2.putText(
         frame,
-        "YOU ARE DEAD",
-        (int(w * 0.34), int(h * 0.46)),
+        "REQUEST REVIVE",
+        (int(w * 0.32), int(h * 0.66)),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.9,
         (40, 40, 255),
