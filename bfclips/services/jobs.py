@@ -47,7 +47,11 @@ def job_output_dir(job: Job, settings: Settings | None = None) -> Path:
     return path
 
 
-def existing_job_for_path(session: Session, source: Path, recent_s: float = 90.0) -> Job | None:
+def existing_job_for_path(
+    session: Session,
+    source: Path,
+    recent_s: float | None = 90.0,
+) -> Job | None:
     path = str(source.expanduser().resolve())
     job = (
         session.query(Job)
@@ -55,7 +59,11 @@ def existing_job_for_path(session: Session, source: Path, recent_s: float = 90.0
         .order_by(Job.created_at.desc())
         .first()
     )
-    if not job or not job.created_at:
+    if not job:
+        return None
+    if recent_s is None:
+        return job
+    if not job.created_at:
         return None
     age = (datetime.utcnow() - job.created_at).total_seconds()
     if age <= recent_s:
@@ -68,6 +76,7 @@ def create_job_from_path(
     source: Path,
     copy_into_work: bool = False,
     reuse_recent: bool = False,
+    reuse_any: bool = False,
 ) -> Job:
     settings = get_settings()
     source = source.expanduser().resolve()
@@ -75,8 +84,8 @@ def create_job_from_path(
         raise JobError(f"File not found: {source}")
     if source.suffix.lower() not in VIDEO_SUFFIXES:
         raise JobError(f"Unsupported video type: {source.suffix}")
-    if reuse_recent:
-        found = existing_job_for_path(session, source)
+    if reuse_recent or reuse_any:
+        found = existing_job_for_path(session, source, None if reuse_any else 90.0)
         if found:
             return found
     job_id = uuid.uuid4().hex[:12]
@@ -103,9 +112,27 @@ def serialize_job(job: Job) -> dict:
         edit = EditDocument.model_validate_json(job.edit_json)
         clips = [c.model_dump() for c in edit.clips]
     outputs = json.loads(job.outputs_json) if job.outputs_json else {}
-    notes = []
+    notes: list[str] = []
+    events: list[dict] = []
+    event_summary: dict[str, int] = {}
     if job.events_json:
-        notes = EventsDocument.model_validate_json(job.events_json).notes
+        doc = EventsDocument.model_validate_json(job.events_json)
+        notes = doc.notes
+        events = [event.model_dump() for event in doc.events]
+        for event in doc.events:
+            event_summary[event.type] = event_summary.get(event.type, 0) + 1
+        # Keep each scored moment tied to every in-window event, including jobs
+        # analysed before the editor started storing the full id list.
+        for clip in clips:
+            start = float(clip.get("start") or 0)
+            end = float(clip.get("end") or 0)
+            window_ids = [
+                event["id"]
+                for event in events
+                if start <= float(event.get("time") or 0) <= end
+            ]
+            if len(window_ids) > len(clip.get("event_ids") or []):
+                clip["event_ids"] = window_ids
     return {
         "id": job.id,
         "filename": job.filename,
@@ -119,6 +146,9 @@ def serialize_job(job: Job) -> dict:
         "height": job.height,
         "fps": job.fps,
         "clips": clips,
+        "events": events,
+        "event_summary": event_summary,
+        "event_count": len(events),
         "outputs": outputs,
         "notes": notes,
         "created_at": job.created_at.isoformat() if job.created_at else None,

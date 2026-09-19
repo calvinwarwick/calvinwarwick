@@ -29,17 +29,19 @@ def build_edit(
 
     for index, cluster in enumerate(clusters, start=1):
         start, end = _window(cluster, windows, duration)
+        start, end = round(start, 3), round(end, 3)
         effects = _effects(cluster, effects_cfg, options)
+        in_window = [event for event in events_doc.events if start <= event.time <= end]
         clip = ClipDecision(
             id=f"clip_{index:03d}",
-            start=round(start, 3),
-            end=round(end, 3),
+            start=start,
+            end=end,
             score=round(cluster.score, 1),
             reason=cluster.reason,
             enabled=cluster.score >= keep,
             effects=effects,
             caption=cluster.caption if options.auto_captions else None,
-            event_ids=[e.id for e in cluster.kills],
+            event_ids=[event.id for event in in_window],
             kill_count=len(cluster.kills),
         )
         clips.append(clip)

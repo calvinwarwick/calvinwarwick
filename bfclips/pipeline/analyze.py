@@ -6,7 +6,7 @@ import cv2
 
 from bfclips.config import Settings, get_settings, scoring_config
 from bfclips.pipeline.audio import analyze_audio
-from bfclips.pipeline.hud import detect_hud_events, draw_calibration
+from bfclips.pipeline.hud import detect_hud_events, draw_calibration, load_hud_templates
 from bfclips.pipeline.scenes import detect_scene_cuts
 from bfclips.pipeline.transcribe import reaction_events, transcribe
 from bfclips.schemas import Event, EventsDocument
@@ -25,14 +25,19 @@ def analyze_video(
     source = probe(video_path)
 
     _emit(progress, 0.15, "hud")
-    hud_events, _signals, times, frames = detect_hud_events(
+    name_template, medal_templates = load_hud_templates(settings.templates_dir)
+    hud_events, aux, times, frames = detect_hud_events(
         str(video_path),
         preset=settings.hud_preset,
         sample_fps=settings.sample_fps,
+        player_name=settings.player_name,
+        name_template=name_template,
+        medal_templates=medal_templates,
     )
 
     _emit(progress, 0.45, "scenes")
-    scene_events, scenes = detect_scene_cuts(frames, times)
+    hists = aux.get("scene_hists") if isinstance(aux, dict) else None
+    scene_events, scenes = detect_scene_cuts(frames or None, times, hists=hists)
 
     _emit(progress, 0.55, "audio")
     audio_events, audio_peaks = analyze_audio(video_path, work_dir)
@@ -48,10 +53,13 @@ def analyze_video(
     if not words:
         notes.append("No transcript (Whisper disabled or not installed).")
     if not any(e.type == "kill" for e in events):
-        notes.append("No kill-feed spikes found. Check HUD preset / calibration overlay.")
+        notes.append("No medals or self kill-feed rows found. Check HUD overlay (top-right feed + center medals).")
 
-    if frames:
-        overlay = draw_calibration(frames[min(len(frames) // 2, len(frames) - 1)], settings.hud_preset)
+    cal = aux.get("cal_frame") if isinstance(aux, dict) else None
+    if cal is None and frames:
+        cal = frames[min(len(frames) // 2, len(frames) - 1)]
+    if cal is not None:
+        overlay = draw_calibration(cal, settings.hud_preset)
         cv2.imwrite(str(work_dir / "hud_calibration.jpg"), overlay)
 
     _emit(progress, 0.95, "write-events")

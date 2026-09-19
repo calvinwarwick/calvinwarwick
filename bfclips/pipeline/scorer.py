@@ -61,6 +61,16 @@ def score_cluster(
     if any(k.meta.get("headshot") for k in kills) or any(e.type == "headshot" for e in extras):
         score += weights["headshot"]
         reasons.append("headshot")
+    if any(k.meta.get("longshot") or k.meta.get("kind") == "longshot" for k in kills) or any(
+        e.type == "longshot" for e in extras
+    ):
+        score += weights.get("longshot", 15)
+        reasons.append("longshot")
+    if any(k.meta.get("blindside") or k.meta.get("kind") == "blindside" for k in kills) or any(
+        e.type == "blindside" for e in extras
+    ):
+        score += weights.get("blindside", 12)
+        reasons.append("blindside")
 
     if len(kills) >= 2 and kills[1].time - kills[0].time <= weights["second_kill_within_s"]["window"]:
         score += weights["second_kill_within_s"]["points"]
@@ -117,6 +127,10 @@ def _caption(kills: list[Event], reasons: list[str]) -> str:
         label = "TRIPLE KILL"
     elif n == 2:
         label = "DOUBLE KILL"
+    elif "longshot" in reasons:
+        label = "LONGSHOT HEADSHOT" if "headshot" in reasons else "LONGSHOT"
+    elif "blindside" in reasons:
+        label = "BLINDSIDE"
     elif "headshot" in reasons:
         label = "HEADSHOT"
     else:

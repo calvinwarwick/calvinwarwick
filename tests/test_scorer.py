@@ -13,6 +13,27 @@ def ev(time: float, type_: str, **meta) -> Event:
     )
 
 
+def test_edit_clip_keeps_every_in_window_event():
+    events = [
+        ev(3.0, "kill"),
+        ev(3.1, "hit_marker"),
+        ev(3.2, "explosion"),
+        ev(3.4, "score"),
+        ev(20.0, "audio_peak"),
+    ]
+    doc = EventsDocument(
+        source=SourceInfo(path="x.mp4", duration=24.0, width=1280, height=720, fps=30),
+        events=events,
+    )
+    edit = build_edit(doc)
+    assert edit.clips
+    clip = edit.clips[0]
+    window = [event for event in events if clip.start <= event.time <= clip.end]
+    assert {event.id for event in window} == set(clip.event_ids)
+    assert "hit_marker_3100" in clip.event_ids
+    assert "audio_peak_20000" not in clip.event_ids
+
+
 def test_double_kill_clusters_and_scores_higher_than_single():
     events = [ev(18.42, "kill"), ev(21.16, "kill"), ev(22.83, "explosion")]
     groups = cluster_kills(events, gap=6.0)
@@ -36,6 +57,20 @@ def test_transcript_reaction_without_event():
     words = [TranscriptWord(start=10.2, end=11.0, text="oh my god")]
     cluster = score_cluster(events, events, words)
     assert cluster.score >= 40
+
+
+def test_longshot_caption_and_bonus():
+    events = [ev(28.2, "kill", kind="longshot", longshot=True, headshot=True), ev(28.2, "longshot")]
+    cluster = score_cluster([events[0]], events, [])
+    assert cluster.score >= 20 + 10 + 15
+    assert "LONGSHOT" in cluster.caption
+
+
+def test_cluster_gap_splits_dead_time():
+    events = [ev(20.0, "kill"), ev(24.0, "kill"), ev(36.5, "kill")]
+    groups = cluster_kills(events, gap=4.0)
+    assert len(groups) == 2
+    assert [k.time for k in groups[0]] == [20.0, 24.0]
 
 
 def test_editor_builds_zoom_and_slowmo():

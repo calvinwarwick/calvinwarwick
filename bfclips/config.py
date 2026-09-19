@@ -27,12 +27,14 @@ class Settings(BaseSettings):
     data_dir: Path = ROOT / "data"
     templates_dir: Path = ROOT / "templates"
     db_path: Path = ROOT / "data" / "bfclips.db"
+    downloads_dir: Path = Path.home() / "Downloads"
 
-    host: str = "127.0.0.1"
+    host: str = "0.0.0.0"
     port: int = 8000
 
     hud_preset: str = "bf6"
-    sample_fps: float = 4.0
+    player_name: str = "buy-bitcoin-247"
+    sample_fps: float = 6.0
     refine_fps: float = 12.0
 
     ollama_url: str = "http://127.0.0.1:11434"
@@ -49,6 +51,25 @@ class Settings(BaseSettings):
 
     auto_analyze: bool = True
 
+    def extra_watch_dirs(self) -> list[Path]:
+        extras = [
+            self.downloads_dir,
+            Path.home() / ".cursor" / "projects" / "workspace" / "uploads",
+            Path.home() / ".cursor" / "projects" / "workspace" / "downloads",
+        ]
+        seen: set[Path] = set()
+        ordered: list[Path] = []
+        for path in extras:
+            resolved = path.expanduser()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            ordered.append(resolved)
+        return ordered
+
+    def watch_dirs(self) -> list[Path]:
+        return [self.incoming_dir, *self.extra_watch_dirs()]
+
     def ensure_dirs(self) -> None:
         for path in (
             self.incoming_dir,
@@ -56,6 +77,7 @@ class Settings(BaseSettings):
             self.work_dir,
             self.data_dir,
             self.templates_dir,
+            *self.extra_watch_dirs(),
         ):
             path.mkdir(parents=True, exist_ok=True)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)

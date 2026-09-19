@@ -6,18 +6,19 @@ from bfclips.schemas import Event
 
 
 def detect_scene_cuts(
-    frames: list[np.ndarray],
+    frames: list[np.ndarray] | None,
     times: list[float],
-    threshold: float = 0.42,
+    threshold: float = 0.88,
+    hists: list[np.ndarray] | None = None,
 ) -> tuple[list[Event], list[dict]]:
     scenes: list[dict] = []
     events: list[Event] = []
-    if len(frames) < 2:
+    series = hists if hists is not None else [_hist(frame) for frame in (frames or [])]
+    if len(series) < 2 or len(times) < 2:
         return events, scenes
-    prev = _hist(frames[0])
+    prev = series[0]
     start = times[0]
-    for frame, t in zip(frames[1:], times[1:]):
-        hist = _hist(frame)
+    for hist, t in zip(series[1:], times[1:]):
         delta = float(cv_chi(prev, hist))
         if delta >= threshold:
             scenes.append({"start": round(start, 3), "end": round(t, 3), "score": round(delta, 3)})
@@ -36,6 +37,10 @@ def detect_scene_cuts(
     if times:
         scenes.append({"start": round(start, 3), "end": round(times[-1], 3), "score": 0.0})
     return events, scenes
+
+
+def frame_hist(frame: np.ndarray) -> np.ndarray:
+    return _hist(frame)
 
 
 def _hist(frame: np.ndarray) -> np.ndarray:

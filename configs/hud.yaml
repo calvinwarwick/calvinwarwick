@@ -1,22 +1,28 @@
-# Normalized [0, 1] HUD crops. Battlefield 6 defaults to a left-side kill feed
-# and a center hit marker; older titles often put the feed top-right.
-# Tune these after dropping a clip and opening the calibration overlay.
+# Normalized [0, 1] HUD crops, tuned on real BF6 SHARE clips
+# (1920x1080, buy-bitcoin-247).
+#
+# BF6 layout:
+#   top-left  = team chat (ignore for kills)
+#   top-right = kill feed (self/squad rows are brighter with a ►)
+#   center    = medals: LONGSHOT / DOUBLE KILL / HEADSHOT + victim skull
+#   downed    = REQUEST REVIVE + red/gray wash
 
 presets:
   bf6:
     kill_feed:
-      - { name: kill_feed_left, x: 0.00, y: 0.10, w: 0.30, h: 0.38 }
-      - { name: kill_feed_right, x: 0.70, y: 0.10, w: 0.30, h: 0.38 }
-    hit_marker: { x: 0.44, y: 0.40, w: 0.12, h: 0.20 }
-    score_popup: { x: 0.36, y: 0.52, w: 0.28, h: 0.16 }
-    death_banner: { x: 0.26, y: 0.28, w: 0.48, h: 0.24 }
+      - { name: kill_feed_right, x: 0.68, y: 0.037, w: 0.32, h: 0.145 }
+    medals: { x: 0.16, y: 0.52, w: 0.38, h: 0.20 }
+    hit_marker: { x: 0.475, y: 0.455, w: 0.05, h: 0.09 }
+    score_popup: { x: 0.28, y: 0.56, w: 0.22, h: 0.10 }
+    death_banner: { x: 0.30, y: 0.64, w: 0.40, h: 0.12 }
     health: { x: 0.02, y: 0.84, w: 0.22, h: 0.14 }
-    objective: { x: 0.34, y: 0.00, w: 0.32, h: 0.10 }
+    objective: { x: 0.34, y: 0.00, w: 0.32, h: 0.08 }
 
   bf2042:
     kill_feed:
       - { name: kill_feed_right, x: 0.72, y: 0.12, w: 0.26, h: 0.34 }
-    hit_marker: { x: 0.45, y: 0.42, w: 0.10, h: 0.16 }
+    medals: { x: 0.32, y: 0.52, w: 0.36, h: 0.16 }
+    hit_marker: { x: 0.47, y: 0.44, w: 0.06, h: 0.12 }
     score_popup: { x: 0.40, y: 0.55, w: 0.20, h: 0.12 }
     death_banner: { x: 0.28, y: 0.32, w: 0.44, h: 0.20 }
     health: { x: 0.02, y: 0.86, w: 0.20, h: 0.12 }
@@ -25,11 +31,24 @@ presets:
 active_preset: bf6
 
 detection:
-  sample_fps: 4
+  sample_fps: 6
   refine_fps: 12
-  min_event_gap: 0.35
-  peak_z: 2.4
-  hit_marker_z: 2.1
-  explosion_global_z: 2.8
-  death_darken_z: 2.0
-  headshot_red_ratio: 1.25
+  min_event_gap: 0.45
+  peak_z: 3.2
+  hit_marker_z: 2.8
+  explosion_global_z: 5.5
+  death_darken_z: 2.4
+  headshot_red_ratio: 0.012
+  medal_onset: 2.4
+  medal_word_min_width: 48
+  medal_template: 0.70
+  medal_hold_s: 2.0
+  name_match: 0.82
+  identity_ttl: 14.0
+  feed_refractory: 1.3
+  feed_new_row: 0.04
+  self_row_gap_min: 7
+  ignore_lead_s: 0.5
+  overlay_value: 52
+  death_sat_drop: 18
+  scene_cut: 0.88

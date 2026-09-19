@@ -75,6 +75,7 @@ def read_settings() -> SettingsOut:
         incoming_dir=str(s.incoming_dir),
         output_dir=str(s.output_dir),
         hud_preset=s.hud_preset,
+        player_name=s.player_name,
         ollama_url=s.ollama_url,
         ollama_model=s.ollama_model,
         ollama_enabled=s.ollama_enabled,
